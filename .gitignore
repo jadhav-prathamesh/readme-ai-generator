@@ -10,6 +10,7 @@ tempCodeRunnerFile*
 
 # Environment
 .env
+!.env.example
 .venv/
 venv/
 env/
@@ -21,9 +22,6 @@ env/
 # macOS
 .DS_Store
 Thumbs.db
-
-# Generated
-README.md
 
 # CLI config
 .claude/
