@@ -1,185 +1,110 @@
-# readme-ai 🤖
+# readme-ai-generator
 
-[![Python](https://img.shields.io/badge/python-3.10%2B-blue?logo=python&logoColor=white)](https://www.python.org/)
-[![License](https://img.shields.io/badge/license-Apache--2.0-green)](LICENSE)
-[![Tests](https://img.shields.io/badge/tests-passing-brightgreen)](#)
-[![GitHub Stars](https://img.shields.io/github/stars/jadhav-prathamesh/readme-ai-generator?style=social)](https://github.com/jadhav-prathamesh/readme-ai-generator)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue)](https://www.python.org/downloads/) [![Apache License](https://img.shields.io/badge/license-Apache%202.0-green)](#license) [![PyPI](https://img.shields.io/badge/pypi-readme--ai--generator-orange)](https://pypi.org/project/readme-ai-generator/)
 
-**Intelligent README.md generation powered by Anthropic Claude AI.**
-
-Analyse any local project directory or public GitHub repository and produce a production-ready, beautifully formatted `README.md` — complete with badges, feature highlights, installation guides, usage examples, API references, and license information.
-
----
+An intelligent README.md generator powered by Claude AI. Analyze any codebase—local or remote—and automatically generate beautiful, production-ready documentation. Simply point it at your project, and let AI handle the rest.
 
 ## ✨ Features
-
-- **🔍 Smart Project Analysis** — Scans directory trees, parses manifest files (`pyproject.toml`, `package.json`, `Cargo.toml`, etc.), and samples up to six key source files for deep context.
-- **🧠 Claude-Powered Generation** — Leverages Anthropic's Claude to write clear, accurate, and well-structured documentation tailored to your project's language and framework.
-- **🖥️ Rich Terminal Preview** — Preview the generated README in style using `rich` panels before saving.
-- **🌐 Local & Remote Support** — Analyse a local folder or clone any public GitHub repository with `--depth 1` for speed.
-- **🚀 CLI-First Design** — Full command-line interface with `-t/--target`, `-o/--output`, `-y/--yes`, file-overwrite protection, and an interactive fallback mode.
-
----
+- **AI-Powered Generation**: Uses Claude AI to intelligently analyze code and generate contextual README content
+- **Multi-Source Support**: Analyze local directories or clone and analyze GitHub repositories on the fly
+- **Smart Project Detection**: Automatically detects project type, dependencies, and key files (pyproject.toml, package.json, Cargo.toml, etc.)
+- **Interactive CLI**: User-friendly command-line interface with optional confirmation prompts
+- **Live Preview**: View generated README in a styled terminal panel before saving
+- **Batch Mode**: Use `--yes` flag to skip confirmations for automation workflows
+- **Flexible Output**: Save to custom file paths (default: README.md)
+- **Cross-Platform**: Full UTF-8 support on Windows, macOS, and Linux
 
 ## 🚀 Installation
-
 ### Prerequisites
+- Python 3.10 or higher
+- An Anthropic API key (set via `ANTHROPIC_API_KEY` environment variable)
+- Git (for analyzing remote repositories)
 
-- Python 3.10 or later
-- An [Anthropic API key](https://console.anthropic.com/) (set via `ANTHROPIC_API_KEY` environment variable)
+### Installation
 
-### Install via pip
-
+**Via pip:**
 ```bash
 pip install readme-ai-generator
 ```
 
-### Install from source
-
+**From source:**
 ```bash
 git clone https://github.com/jadhav-prathamesh/readme-ai-generator.git
 cd readme-ai-generator
 pip install -e .
 ```
 
----
+### Setup
+
+1. Obtain an API key from [Anthropic](https://console.anthropic.com/)
+2. Set your API key:
+   ```bash
+   export ANTHROPIC_API_KEY="your-key-here"
+   ```
+   Or create a `.env` file in your project directory:
+   ```
+   ANTHROPIC_API_KEY=your-key-here
+   ```
 
 ## 📖 Usage
+### Basic Usage
 
+**Generate README for current directory:**
 ```bash
-# Quick start — analyse current directory
-export ANTHROPIC_API_KEY="your-key-here"
-readme-ai -t . -y
-
-# Analyse a remote GitHub repository
-readme-ai -t https://github.com/user/repo -o README.md
-
-# Interactive mode (prompts for target)
 readme-ai
 ```
 
-### CLI Options
-
-| Flag | Description |
-|------|-------------|
-| `-t, --target` | Local path or GitHub URL to analyse (default: current dir) |
-| `-o, --output` | Output file path (default: `README.md`) |
-| `-y, --yes` | Skip confirmation prompts and auto-save |
-| `-V, --version` | Show version and exit |
-| `-h, --help` | Show help message |
-
-### Environment Variables
-
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `ANTHROPIC_API_KEY` | ✅ | Your Anthropic API key |
-| `ANTHROPIC_BASE_URL` | ❌ | Custom API base URL (e.g. for proxies) |
-| `ANTHROPIC_MODEL` | ❌ | Claude model name (default: `claude-sonnet-4-20250514`) |
-| `ANTHROPIC_AUTH_TOKEN` | ❌ | Auth token (alternative to API key) |
-
-You may also place these in a `.env` file in the working directory.
-
----
-
-## 🔌 API Reference
-
-### `readme_ai.cli.main()`
-
-CLI entry point. Handles argument parsing, project analysis, README generation, preview, and file saving.
-
-### `readme_ai.generator.ReadmeGenerator`
-
-```python
-generator = ReadmeGenerator(api_key="optional-key")
-markdown = generator.generate(project_context)
+**Analyze a specific local directory:**
+```bash
+readme-ai --target ./my-project
 ```
 
-- `generate(context: dict) -> str` — Accepts a project context dictionary with keys `project_name`, `directory_tree`, `manifests`, and `sample_files`. Returns the full README markdown string.
-
-### `readme_ai.project_analyzer.ProjectAnalyzer`
-
-```python
-analyzer = ProjectAnalyzer(target="path-or-url")
-path = analyzer.prepare()          # clone remote or resolve local
-context = analyzer.analyze()       # scan and build context
-analyzer.cleanup()                 # remove temp clone
+**Analyze a GitHub repository:**
+```bash
+readme-ai --target https://github.com/user/repo
 ```
 
-- `prepare() -> Path` — Resolves `target` to a local `Path`, cloning remote repos into a temporary directory.
-- `analyze() -> dict` — Walks the project tree, collecting manifests and sample source files.
-- `cleanup()` — Removes the temporary clone (no-op for local targets).
-
-### `readme_ai.preview.render_preview()`
-
-```python
-render_preview(markdown_content, project_name)
+**Save to a custom output file:**
+```bash
+readme-ai --target ./my-project --output docs/README.md
 ```
 
-Renders the markdown inside a styled `rich` panel for terminal preview.
-
----
-
-## 📁 Project Structure
-
-```
-readme-ai-generator/
-├── readme_ai/
-│   ├── __init__.py            # Package metadata
-│   ├── __main__.py            # python -m readme_ai entry point
-│   ├── cli.py                 # CLI argument parsing & orchestration
-│   ├── generator.py           # Claude API interaction
-│   ├── preview.py             # Terminal markdown preview
-│   └── project_analyzer.py    # Filesystem & git analysis
-├── tests/
-│   ├── test_analyzer.py
-│   ├── test_cli.py
-│   └── test_generator.py
-├── pyproject.toml
-├── .env.example
-├── .gitignore
-└── README.md
+**Skip confirmation prompts (batch mode):**
+```bash
+readme-ai --target ./my-project --yes
 ```
 
----
-
-## 🧪 Development
+### Command-Line Options
 
 ```bash
-# Clone and install in editable mode
-git clone https://github.com/jadhav-prathamesh/readme-ai-generator.git
-cd readme-ai-generator
-pip install -e .
-
-# Run tests
-pytest tests/ -v
-
-# Generate a README
-readme-ai -t . -y
+readme-ai --help
 ```
 
----
+- `-t, --target <path|url>`: Local directory or GitHub repository URL (default: current directory)
+- `-o, --output <path>`: Output file path (default: README.md)
+- `-y, --yes`: Skip confirmation prompts and proceed automatically
 
-## 🤝 Contributing
+### Running from Source
 
-Contributions are welcome! Please follow these steps:
+```bash
+python -m readme_ai --target ./my-project
+```
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feat/my-feature`)
-3. Commit your changes (`git commit -m 'Add my feature'`)
-4. Push to the branch (`git push origin feat/my-feature`)
-5. Open a Pull Request
+## 🔌 API Reference
+**CLI Entry Point**: `readme-ai` command
 
-Make sure tests pass before submitting.
+**Main Classes**:
+- `ProjectAnalyzer`: Analyzes local directories or clones remote GitHub repositories; samples code and metadata
+- `ReadmeGenerator`: Communicates with Anthropic API (Claude) to generate README JSON structure
+- `ReadmePreview`: Renders generated README in terminal with styled formatting
 
----
+**Generated README Structure** (JSON output from Claude):
+- `overview`: Project title with badges and description
+- `features`: Bulleted list of key features
+- `installation`: Step-by-step setup instructions
+- `usage`: Code examples and usage patterns
+- `api`: API/CLI endpoint documentation
+- `license`: License information
 
 ## 📄 License
-
-Distributed under the **Apache License 2.0**. See [`LICENSE`](LICENSE) for more information.
-
----
-
-<p align="center">
-  Made with ❤️ by <a href="https://github.com/jadhav-prathamesh">Prathmesh Jadhav</a>
-</p>
-
+Apache License 2.0. See the [LICENSE](LICENSE) file for details.
