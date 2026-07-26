@@ -1,4 +1,6 @@
-"""Module for communicating with the Anthropic API (Claude) to generate the README sections."""
+"""Communication with the Anthropic API (Claude) for README generation."""
+
+from __future__ import annotations
 
 import json
 import os
@@ -28,35 +30,34 @@ Example output format:
 {"overview": "# My Project\\n\\nDescription here.", "features": "- Feature A\\n- Feature B", "installation": "...", "usage": "...", "api": "...", "license": "..."}
 
 Tailor the README to the specific framework and language you detect in the code.
-Do not hallucinate features. If something is unknown, infer it intelligently or provide a template placeholder.
-"""
+Do not hallucinate features. If something is unknown, infer it intelligently or provide a template placeholder."""
 
 
 class ReadmeGenerator:
     """Generates README content using Claude."""
 
-    def __init__(self, api_key: str | None = None):
+    def __init__(self, api_key: str | None = None) -> None:
         if api_key:
             self.client = anthropic.Anthropic(api_key=api_key)
         else:
-            self.client = anthropic.Anthropic()  # Will resolve from environment automatically
+            self.client = anthropic.Anthropic()
 
     def generate(self, project_context: dict[str, Any]) -> str:
-        """Sends project context to Claude and generates README.md."""
+        """Send project context to Claude and return the generated README.md text.
 
-        # Build prompt payload
-        prompt = f"Project Name: {project_context.get('project_name')}\n\n"
-        prompt += f"Directory Tree:\n{project_context.get('directory_tree', '')}\n\n"
+        Parameters
+        ----------
+        project_context : dict[str, Any]
+            Dictionary with keys ``project_name``, ``directory_tree``,
+            ``manifests``, and ``sample_files``.
 
-        prompt += "Manifests:\n"
-        for name, content in project_context.get("manifests", {}).items():
-            prompt += f"--- {name} ---\n{content}\n\n"
+        Returns
+        -------
+        str
+            Fully rendered README markdown.
+        """
+        prompt = self._build_prompt(project_context)
 
-        prompt += "Sample Sources:\n"
-        for name, content in project_context.get("sample_files", {}).items():
-            prompt += f"--- {name} ---\n{content}\n\n"
-
-        # Define structured output schema
         try:
             response = self.client.messages.create(
                 model=CLAUDE_MODEL,
@@ -65,57 +66,75 @@ class ReadmeGenerator:
                 messages=[{"role": "user", "content": prompt}],
             )
 
-            # Extract text output
-            json_text = ""
-            for block in response.content:
-                if block.type == "text":
-                    json_text = block.text
-                    break
-
-            if not json_text:
-                raise ValueError("Claude returned an empty response.")
-
-            # Strip markdown code fences if present (common with local proxies)
-            json_text = json_text.strip()
-            if json_text.startswith("```"):
-                # Remove opening fence (```json / ``` )
-                json_text = re.sub(r"^```\w*\s*", "", json_text)
-                # Remove closing fence
-                json_text = re.sub(r"\s*```\s*$", "", json_text)
-                json_text = json_text.strip()
-
-            if not json_text:
-                raise ValueError("Claude returned an empty JSON payload.")
-
+            json_text = self._extract_text(response)
+            json_text = self._strip_markdown_fences(json_text)
             data = json.loads(json_text)
             return self._build_markdown(data)
 
         except anthropic.AuthenticationError:
-            raise RuntimeError("Anthropic API Key is missing or invalid. Set ANTHROPIC_API_KEY environment variable.")
+            raise RuntimeError(
+                "Anthropic API key is missing or invalid. "
+                "Set ANTHROPIC_API_KEY environment variable."
+            )
         except (anthropic.APIError, ValueError, KeyError, json.JSONDecodeError) as e:
             raise RuntimeError(f"Failed to generate README: {e!s}")
 
+    # ------------------------------------------------------------------
+    # Internal helpers
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _build_prompt(ctx: dict[str, Any]) -> str:
+        lines = [f"Project Name: {ctx.get('project_name')}\n"]
+        lines.append(f"Directory Tree:\n{ctx.get('directory_tree', '')}\n")
+        lines.append("Manifests:\n")
+        for name, content in ctx.get("manifests", {}).items():
+            lines.append(f"--- {name} ---\n{content}\n")
+        lines.append("Sample Sources:\n")
+        for name, content in ctx.get("sample_files", {}).items():
+            lines.append(f"--- {name} ---\n{content}\n")
+        return "\n".join(lines)
+
+    @staticmethod
+    def _extract_text(response: anthropic.types.Message) -> str:
+        content = response.content
+        if isinstance(content, str):
+            return content
+        for block in content:
+            if isinstance(block, anthropic.types.TextBlock):
+                return block.text
+        raise ValueError("Claude returned an empty response.")
+
+    @staticmethod
+    def _strip_markdown_fences(text: str) -> str:
+        """Remove leading/trailing markdown code fences (e.g. `` ```json ``)."""
+        text = text.strip()
+        text = re.sub(r"^```\w*\s*", "", text)
+        text = re.sub(r"\s*```\s*$", "", text)
+        return text.strip()
+
     @staticmethod
     def _build_markdown(data: dict[str, str]) -> str:
-        """Stitches the JSON sections into a single Markdown string."""
-        md = []
+        """Stitch the JSON sections into a single Markdown string."""
+        sections = []
 
         if "overview" in data:
-            md.append(data["overview"].strip())
+            sections.append(data["overview"].strip())
 
         if "features" in data:
-            md.append("\n## ✨ Features\n" + data["features"].strip())
+            sections.append(f"\n## ✨ Features\n{data['features'].strip()}")
 
         if "installation" in data:
-            md.append("\n## 🚀 Installation\n" + data["installation"].strip())
+            sections.append(f"\n## 🚀 Installation\n{data['installation'].strip()}")
 
         if "usage" in data:
-            md.append("\n## 📖 Usage\n" + data["usage"].strip())
+            sections.append(f"\n## 📖 Usage\n{data['usage'].strip()}")
 
-        if "api" in data and data["api"].strip().lower() not in ["n/a", "none"]:
-            md.append("\n## 🔌 API Reference\n" + data["api"].strip())
+        if "api" in data and data["api"].strip().lower() not in ("n/a", "none"):
+            sections.append(f"\n## 🔌 API Reference\n{data['api'].strip()}")
 
         if "license" in data:
-            md.append("\n## 📄 License\n" + data["license"].strip())
+            sections.append(f"\n## 📄 License\n{data['license'].strip()}")
 
-        return "\n".join(md)
+        return "\n".join(sections)
+

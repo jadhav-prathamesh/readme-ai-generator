@@ -5,10 +5,23 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "readme-ai-generator"
 version = "0.1.0"
-description = "An AI-powered README generator for local projects and GitHub repositories using Claude"
+description = "Intelligent README.md generator powered by Claude AI"
 readme = "README.md"
 license = "Apache-2.0"
 requires-python = ">=3.10"
+keywords = ["readme", "generator", "documentation", "claude", "anthropic", "ai"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Documentation",
+    "Topic :: Software Development :: Code Generators",
+]
 dependencies = [
     "anthropic>=0.30.0",
     "rich>=13.0.0",
@@ -16,5 +29,13 @@ dependencies = [
     "python-dotenv>=1.0.0",
 ]
 
+[project.urls]
+Homepage = "https://github.com/jadhav-prathamesh/readme-ai-generator"
+Repository = "https://github.com/jadhav-prathamesh/readme-ai-generator"
+Issues = "https://github.com/jadhav-prathamesh/readme-ai-generator/issues"
+
 [project.scripts]
 readme-ai = "readme_ai.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["readme_ai*"]

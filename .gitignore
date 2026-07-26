@@ -18,10 +18,13 @@ env/
 .vscode/
 .idea/
 
-# OS
+# macOS
 .DS_Store
 Thumbs.db
 
 # Generated
 README.md
+
+# CLI config
+.claude/
 
